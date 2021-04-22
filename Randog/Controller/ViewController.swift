@@ -7,18 +7,29 @@
 
 import UIKit
 
+
 class ViewController: UIViewController {
 
     @IBOutlet weak var imageView: UIImageView!
+    @IBOutlet weak var pickerView: UIPickerView!
     
+    var breeds: [String] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
        
-        DogAPI.requestRandomImage { (imageData , error) in
-            handleRandomImageResponse(imageData: imageData, error: error)
+        pickerView.dataSource = self
+        pickerView.delegate = self
        
+
+        DogAPI.requestBreedsList(completionHandler: handleBreedsListRespone(breeds:error:))
+    }
+    
+    func handleBreedsListRespone(breeds: [String], error: Error?) {
+        self.breeds = breeds
+        DispatchQueue.main.async {
+            self.pickerView.reloadAllComponents()
+        }
     }
     
     func handleRandomImageResponse(imageData: dogImage?, error: Error?) {
@@ -27,7 +38,7 @@ class ViewController: UIViewController {
         }
             
         DogAPI.requestImageFile(url: imageURL) { (image, error) in
-            handleImageFileResponse(image: image, error: error)
+            self.handleImageFileResponse(image: image, error: error)
       }
     }
     
@@ -38,4 +49,28 @@ class ViewController: UIViewController {
      }
 
   }
+    
+
+
+extension ViewController: UIPickerViewDataSource, UIPickerViewDelegate {
+    func numberOfComponents(in pickerView: UIPickerView) -> Int {
+        return 1
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        return breeds.count
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+        return breeds[row]
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        DogAPI.requestRandomImage(breed: breeds[row], completionHandler: { (imageData, error) in
+            self.handleRandomImageResponse(imageData: imageData, error: error)
+        })
+         
+    }
 }
+    
+
